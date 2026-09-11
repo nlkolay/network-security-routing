@@ -1,0 +1,36 @@
+{
+  "log": { "loglevel": "warning" },
+  "dns": { "servers": ["1.1.1.1", "8.8.8.8"] },
+  "routing": {
+    "domainStrategy": "IPOnDemand",
+    "rules": [
+      {
+        "type": "field",
+        "ip": ["192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12", "127.0.0.0/8"],
+        "outboundTag": "blocked"
+      }
+    ]
+  },
+  "inbounds": [
+    {
+      "port": 8443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [ { "id": "USER_UUID_HERE", "flow": "xtls-rprx-vision" } ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false, "dest": "dl.google.com:443", "serverNames": ["dl.google.com"],
+          "privateKey": "SERVER_PRIVATE_KEY_HERE", "shortIds": [""]
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    { "protocol": "freedom", "tag": "direct", "settings": { "domainStrategy": "UseIP" } },
+    { "protocol": "blackhole", "tag": "blocked" }
+  ]
+}
