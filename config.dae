@@ -1,3 +1,4 @@
+# eBPF маршрутизация для OpenWrt: обход DPI, DNS DoH, сплит-туннелирование
 global {
   lan_interface: br-lan
   wan_interface: auto
