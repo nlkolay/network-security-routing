@@ -1,0 +1,55 @@
+global {
+  lan_interface: br-lan
+  wan_interface: auto
+  log_level: info
+  allow_insecure: false
+  auto_config_kernel_parameter: true
+  dial_mode: domain
+}
+subscription {
+  my_sub: 'vless://uuid@server:443?encryption=none&flow=xtls-rprx-vision&security=reality&sni=dl.google.com&pbk=key&sid=id'
+}
+dns {
+  servers: [
+    { tag: "dns_comss", type: "https", server: "router.comss.one", detour: "direct" },
+    { tag: "dns_google", type: "udp", server: "8.8.8.8", detour: "direct" }
+  ]
+  rules: [
+    { outbound: "any", server: "dns_google" },
+    { rule_set: "geosite-comss", server: "dns_google" },
+    { query_type: ["A", "AAAA"], server: "dns_comss" }
+  ]
+  final: "dns_comss"
+  strategy: "ipv4_only"
+}
+inbounds: [
+  {
+    type: "tun", tag: "tun-in", address: ["172.19.0.1/30"],
+    auto_route: true, strict_route: true, stack: "mixed", sniff: true
+  }
+]
+outbounds: [
+  { type: "direct", tag: "direct" },
+  { type: "block", tag: "block" }
+]
+route {
+  rule_set: [
+    { tag: "geosite-yandex", type: "remote", format: "binary", url: "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-yandex.srs", download_detour: "direct" }
+  ]
+  rules: [
+    { protocol: "dns", action: "hijack-dns" },
+    { ip_is_private: true, action: "route", outbound: "direct" },
+    
+    # Guest Node Full Bypass
+    { source_ip_cidr: ["192.168.1.xxx/32"], action: "route", outbound: "direct" },
+    
+    # Media Server Split Routing
+    { source_ip_cidr: ["192.168.1.xxx/32"], domain_keyword: ["tmdb", "imdb", "radarr", "sonarr", "rutracker"], action: "route", outbound: "proxy" },
+    { source_ip_cidr: ["192.168.1.xxx/32"], action: "route", outbound: "direct" },
+    
+    # General Rules
+    { rule_set: "geosite-yandex", action: "route", outbound: "direct" },
+    { domain_suffix: [".ru", ".rf"], action: "route", outbound: "direct" }
+  ]
+  final: "direct"
+}
